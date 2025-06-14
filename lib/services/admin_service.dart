@@ -16,11 +16,13 @@ class AdminService {
     final token = prefs.getString('accessToken');
 
     if (token == null) {
-      throw Exception('Akses ditolak: Token tidak ditemukan. Silakan login kembali.');
+      throw Exception(
+        'Akses ditolak: Token tidak ditemukan. Silakan login kembali.',
+      );
     }
 
     final response = await http.get(
-      Uri.parse('$_apiBaseUrl/api/admin/transactions'),
+      Uri.parse('$_apiBaseUrl/admin/transactions'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         // Sertakan token untuk otorisasi
@@ -34,8 +36,7 @@ class AdminService {
     } else if (response.statusCode == 401 || response.statusCode == 403) {
       // Jika token tidak valid atau bukan admin
       throw Exception('Akses ditolak. Anda tidak memiliki hak akses admin.');
-    }
-    else {
+    } else {
       throw Exception('Gagal memuat data transaksi.');
     }
   }

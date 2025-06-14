@@ -92,7 +92,7 @@ class _ButtomNavState extends State<ButtomNav> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Toko Roti Wangsa'),
+        title: const Text('Toko Roti'),
         backgroundColor: wPrimaryColor,
         foregroundColor: Colors.white,
         actions: [

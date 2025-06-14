@@ -7,12 +7,10 @@ class TransaksiManage extends StatefulWidget {
   const TransaksiManage({super.key});
 
   @override
-  State<TransaksiManage> createState() =>
-      _TransaksiManageState();
+  State<TransaksiManage> createState() => _TransaksiManageState();
 }
 
-class _TransaksiManageState
-    extends State<TransaksiManage> {
+class _TransaksiManageState extends State<TransaksiManage> {
   final AdminService _adminService = AdminService();
   late Future<List<Order>> _futureOrders;
 
