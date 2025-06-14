@@ -27,9 +27,9 @@ class _BottomNavBarState extends State<BottomNavBar> {
     ListProductPage(),
     KeranjangPage(),
     PembayaranPage(),
-    // TransaksiManagePage(),
-    // UserManagePage(),
-    // AddProductPage()
+    TransaksiManage(),
+    UserManage(),
+    AddProductPage(),
   ];
 
   @override
@@ -39,22 +39,21 @@ class _BottomNavBarState extends State<BottomNavBar> {
         key: _bottomNavigationKey,
         index: _page,
         items: const [
-
-        //buttom nav bar user
+          //buttom nav bar user
           CurvedNavigationBarItem(
-            child: Icon(Icons.menu_outlined, color: Colors.white,),
+            child: Icon(Icons.menu_outlined, color: Colors.white),
             label: 'Menu',
             labelStyle: TextStyle(color: Colors.white, fontSize: 12),
           ),
           CurvedNavigationBarItem(
             child: Icon(Icons.shopping_cart, color: Colors.white),
             label: 'Keranjang',
-             labelStyle: TextStyle(color: Colors.white, fontSize: 12),
+            labelStyle: TextStyle(color: Colors.white, fontSize: 12),
           ),
           CurvedNavigationBarItem(
-            child: Icon(Icons.payment, color: Colors.white,),
+            child: Icon(Icons.payment, color: Colors.white),
             label: 'Pembayaran',
-             labelStyle: TextStyle(color: Colors.white, fontSize: 12),
+            labelStyle: TextStyle(color: Colors.white, fontSize: 12),
           ),
 
           //buttom login admin
@@ -75,7 +74,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
           // ),
         ],
         color: wPrimaryColor,
-        buttonBackgroundColor:  wPrimaryColor,
+        buttonBackgroundColor: wPrimaryColor,
         backgroundColor: Colors.transparent,
         animationCurve: Curves.easeInOut,
         animationDuration: Duration(milliseconds: 600),

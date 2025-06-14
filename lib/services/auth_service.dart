@@ -55,7 +55,9 @@ class AuthService {
     if (response.statusCode == 200) {
       final userData = User.fromJson(jsonDecode(response.body));
       final prefs = await SharedPreferences.getInstance();
+      // Simpan token DAN role pengguna
       await prefs.setString('accessToken', userData.accessToken);
+      await prefs.setString('userRole', userData.role); // <-- TAMBAHKAN INI
       return userData;
     } else {
       final error = jsonDecode(response.body);
@@ -63,10 +65,17 @@ class AuthService {
     }
   }
 
-  // ... (fungsi logout dan getToken tetap sama)
+  // Fungsi logout juga harus membersihkan role
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('accessToken');
+    await prefs.remove('userRole'); // <-- TAMBAHKAN INI
+  }
+
+  // --- FUNGSI BARU UNTUK MENDAPATKAN ROLE ---
+  Future<String?> getUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('userRole');
   }
 
   Future<String?> getToken() async {
