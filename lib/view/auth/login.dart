@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 // import 'package:toko_roti/view/home_screen.dart'; // Uncomment jika sudah ada home screen
 import 'package:toko_roti/view/auth/register.dart';
 import '../../services/auth_service.dart';
+import 'package:toko_roti/ui/widget/buttom_nav.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -43,23 +44,29 @@ class _LoginState extends State<Login> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Login berhasil! Halo, ${user.name}')),
         );
-        
-        // Contoh navigasi ke halaman home setelah login berhasil
-        // Navigator.pushReplacement(
-        //   context,
-        //   MaterialPageRoute(builder: (context) => const HomeScreen()),
-        // );
 
+        // Navigasi ke MainScreen dengan membawa role
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ButtomNav(userRole: user.role),
+          ),
+        );
       } catch (e) {
         // Jika gagal, tampilkan pesan error dari backend
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}')),
+          SnackBar(
+            content: Text(
+              'Error: ${e.toString().replaceAll('Exception: ', '')}',
+            ),
+          ),
         );
       } finally {
-        // Apapun hasilnya, hentikan loading
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
@@ -163,7 +170,10 @@ class _LoginState extends State<Login> {
 
                 // --- Tombol Login dengan Loading Indicator ---
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _login, // Nonaktifkan tombol saat loading
+                  onPressed:
+                      _isLoading
+                          ? null
+                          : _login, // Nonaktifkan tombol saat loading
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFD35400),
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -171,23 +181,24 @@ class _LoginState extends State<Login> {
                       borderRadius: BorderRadius.circular(12.0),
                     ),
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 3,
+                  child:
+                      _isLoading
+                          ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 3,
+                            ),
+                          )
+                          : const Text(
+                            'Masuk',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
-                        )
-                      : const Text(
-                          'Masuk',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
                 ),
                 const SizedBox(height: 24.0),
 
