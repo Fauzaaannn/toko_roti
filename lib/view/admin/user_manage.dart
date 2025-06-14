@@ -1,6 +1,7 @@
-// lib/admin_view_users_screen.dart
 import 'package:flutter/material.dart';
-import 'package:toko_roti/model/user_model.dart'; // Impor model User
+import 'package:intl/intl.dart'; // Impor untuk format tanggal
+import '../../model/customer_model.dart'; // Impor model Customer
+import '../../services/admin_service.dart'; // Impor service Admin
 
 class UserManage extends StatefulWidget {
   const UserManage({super.key});
@@ -10,94 +11,91 @@ class UserManage extends StatefulWidget {
 }
 
 class _UserManageState extends State<UserManage> {
-  // --- DATA DUMMY ---
-  // Kita buat daftar pengguna palsu di sini sebagai pengganti data dari API.
-  final List<User> _dummyUsers = [
-    User(
-      id: 1,
-      name: 'Budi Santoso',
-      email: 'budi.santoso@example.com',
-      role: '081234567890',
-      accessToken: 'blabla',
-    ),
-    User(
-      id: 2,
-      name: 'Citra Lestari',
-      email: 'citra.lestari@example.com',
-      role: '085678901234',
-      accessToken: 'blabla',
-    ),
-    User(
-      id: 3,
-      name: 'Ahmad Dahlan',
-      email: 'ahmad.d@example.com',
-      role: '087812345678',
-      accessToken: 'blabla',
-    ),
-    User(
-      id: 4,
-      name: 'Dewi Anggraini',
-      email: 'dewi.anggraini@example.com',
-      role: '089955554321',
-      accessToken: 'blabla',
-    ),
-  ];
-  // --- AKHIR DATA DUMMY ---
+  final AdminService _adminService = AdminService();
+  late Future<List<Customer>> _futureCustomers;
+
+  @override
+  void initState() {
+    super.initState();
+    // Panggil API saat halaman pertama kali dibuka
+    _futureCustomers = _adminService.getAllCustomers();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Admin: Daftar Pengguna (UI)'),
-        backgroundColor: const Color(0xFFD35400),
-        foregroundColor: Colors.white,
-        elevation: 2,
-      ),
-      body: ListView.builder(
-        // Jumlah item dalam list sesuai dengan panjang data dummy
-        itemCount: _dummyUsers.length,
-        itemBuilder: (context, index) {
-          // Ambil satu user dari data dummy berdasarkan index-nya
-          final user = _dummyUsers[index];
+      // AppBar bisa dihilangkan jika sudah ada di main_screen.dart
+      // appBar: AppBar(
+      //   title: const Text('Admin: Daftar Pengguna'),
+      //   backgroundColor: const Color(0xFFD35400),
+      //   foregroundColor: Colors.white,
+      // ),
+      body: FutureBuilder<List<Customer>>(
+        future: _futureCustomers,
+        builder: (context, snapshot) {
+          // Saat loading
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          // Jika ada error
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          // Jika data tidak ada atau kosong
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('Tidak ada data pengguna.'));
+          }
 
-          // Tampilkan dalam widget Card dan ListTile yang sama seperti sebelumnya
-          return Card(
-            margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            elevation: 1.5,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ),
-              leading: CircleAvatar(
-                radius: 25,
-                backgroundColor: const Color(0xFFD35400).withOpacity(0.1),
-                child: Text(
-                  user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
-                  style: const TextStyle(
-                    color: Color(0xFFD35400),
-                    fontWeight: FontWeight.bold,
-                  ),
+          // Jika data berhasil dimuat
+          final customers = snapshot.data!;
+          return ListView.builder(
+            itemCount: customers.length,
+            itemBuilder: (context, index) {
+              final user = customers[index];
+
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                elevation: 1.5,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ),
-              title: Text(
-                user.name,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 4),
-                  Text(user.email),
-                  const SizedBox(height: 2),
-                  Text(user.role),
-                ],
-              ),
-              isThreeLine: true,
-            ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  leading: CircleAvatar(
+                    radius: 25,
+                    backgroundColor: const Color(0xFFD35400).withOpacity(0.1),
+                    child: Text(
+                      user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                      style: const TextStyle(
+                        color: Color(0xFFD35400),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  title: Text(
+                    user.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 4),
+                      Text(user.email),
+                      const SizedBox(height: 2),
+                      // Tampilkan tanggal bergabung, bukan role statis
+                      Text(
+                        'Bergabung: ${DateFormat('d MMMM yyyy').format(user.createdAt)}',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  isThreeLine: true,
+                ),
+              );
+            },
           );
         },
       ),
