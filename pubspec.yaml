@@ -45,6 +45,9 @@ dependencies:
   curved_labeled_navigation_bar: ^2.0.6
   mime: ^1.0.2
   http_parser: ^4.1.2
+  webview_flutter: ^4.13.0
+  geolocator: ^14.0.1
+  geocoding: ^4.0.0
 
 
 dev_dependencies:
