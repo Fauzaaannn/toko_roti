@@ -1,40 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-
-// Model untuk Product
-class Product {
-  final String id;
-  final String name;
-  final String description;
-  final double price;
-  final String imageUrl;
-  final String category;
-  final bool isAvailable;
-
-  Product({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.price,
-    required this.imageUrl,
-    required this.category,
-    this.isAvailable = true,
-  });
-
-  factory Product.fromJson(Map<String, dynamic> json) {
-    return Product(
-      id: json['id'].toString(),
-      name: json['name'],
-      description: json['description'],
-      price: double.tryParse(json['price'].toString()) ?? 0,
-      imageUrl: json['imageUrl'],
-      category: json['category'] ?? 'Lainnya',
-      isAvailable: json['isAvailable'] ?? true,
-    );
-  }
-}
+import 'package:toko_roti/model/product_model.dart';
+import 'package:toko_roti/controller/product_controller.dart';
 
 class ListProduct extends StatefulWidget {
   @override
@@ -44,6 +10,7 @@ class ListProduct extends StatefulWidget {
 class _ListProductState extends State<ListProduct> {
   List<Product> products = [];
   bool isLoading = true;
+  final ProductController _controller = ProductController();
 
   @override
   void initState() {
@@ -55,24 +22,12 @@ class _ListProductState extends State<ListProduct> {
     setState(() {
       isLoading = true;
     });
-    final baseUrl = dotenv.env['API_BASE_URL'];
-    final url = Uri.parse('$baseUrl/products');
     try {
-      final response = await http.get(url);
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        setState(() {
-          products = data.map((json) => Product.fromJson(json)).toList();
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          isLoading = false;
-        });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Gagal memuat produk')));
-      }
+      final fetchedProducts = await _controller.fetchProducts();
+      setState(() {
+        products = fetchedProducts;
+        isLoading = false;
+      });
     } catch (e) {
       setState(() {
         isLoading = false;
@@ -80,6 +35,27 @@ class _ListProductState extends State<ListProduct> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Terjadi kesalahan: $e')));
+    }
+  }
+
+  Future<void> _addToCart(Product product) async {
+    try {
+      final msg = await _controller.addToCart(product);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: Colors.brown[600],
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
   }
 
@@ -320,17 +296,6 @@ class _ListProductState extends State<ListProduct> {
           ],
         );
       },
-    );
-  }
-
-  // Method untuk menambah ke keranjang (sementara snackbar)
-  void _addToCart(Product product) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${product.name} ditambahkan ke keranjang'),
-        backgroundColor: Colors.brown[600],
-        duration: Duration(seconds: 2),
-      ),
     );
   }
 }
