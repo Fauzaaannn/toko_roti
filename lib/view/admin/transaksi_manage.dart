@@ -77,22 +77,22 @@ class _TransaksiManageState extends State<TransaksiManage> {
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Admin: Riwayat Transaksi'),
-        backgroundColor: const Color(0xFFD35400),
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              // Fungsi refresh untuk memuat ulang data
-              setState(() {
-                _futureOrders = _adminService.getAllTransactions();
-              });
-            },
-          ),
-        ],
-      ),
+      // appBar: AppBar(
+      //   title: const Text('Admin: Riwayat Transaksi'),
+      //   backgroundColor: const Color(0xFFD35400),
+      //   foregroundColor: Colors.white,
+      //   actions: [
+      //     IconButton(
+      //       icon: const Icon(Icons.refresh),
+      //       onPressed: () {
+      //         // Fungsi refresh untuk memuat ulang data
+      //         setState(() {
+      //           _futureOrders = _adminService.getAllTransactions();
+      //         });
+      //       },
+      //     ),
+      //   ],
+      // ),
       body: FutureBuilder<List<Order>>(
         future: _futureOrders,
         builder: (context, snapshot) {
