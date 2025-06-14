@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:toko_roti/view/auth/login.dart'; // Sesuaikan dengan path Anda
+import 'package:provider/provider.dart'; // Impor provider
+import 'package:toko_roti/controller/cart_provider.dart'; // Impor CartProvider
+import 'package:intl/date_symbol_data_local.dart';
 
 Future<void> main() async {
-  // Load file .env sebelum aplikasi berjalan
+  WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+  await initializeDateFormatting('id_ID', null);
 
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => CartProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

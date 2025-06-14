@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:toko_roti/model/product_model.dart';
 import 'package:toko_roti/controller/product_controller.dart';
+import 'package:provider/provider.dart';
+import 'package:toko_roti/controller/cart_provider.dart';
 
 class ListProduct extends StatefulWidget {
   @override
@@ -39,24 +41,16 @@ class _ListProductState extends State<ListProduct> {
   }
 
   Future<void> _addToCart(Product product) async {
-    try {
-      final msg = await _controller.addToCart(product);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(msg),
-          backgroundColor: Colors.brown[600],
-          duration: Duration(seconds: 2),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
+    // Panggil provider untuk menambahkan item
+    Provider.of<CartProvider>(context, listen: false).addItem(product);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${product.name} ditambahkan ke keranjang'),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 1),
+      ),
+    );
   }
 
   @override

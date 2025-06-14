@@ -1,40 +1,46 @@
 import 'package:flutter/material.dart';
-import '../model/cart_item.dart';
+import 'package:toko_roti/model/cart_item.dart';
+import 'package:toko_roti/model/product_model.dart';
 
 class CartProvider with ChangeNotifier {
-  Map<String, CartItem> _items = {};
+  final Map<String, CartItem> _items = {};
 
-  Map<String, CartItem> get items => _items;
+  Map<String, CartItem> get items => {..._items};
 
   int get itemCount => _items.length;
 
   double get totalAmount {
-    double total = 0.0;
-    _items.forEach((key, item) {
-      if (item.isSelected) {
-        total += item.price * item.quantity;
+    var total = 0.0;
+    _items.forEach((key, cartItem) {
+      // Hanya hitung item yang dicentang
+      if (cartItem.isSelected) {
+        total += cartItem.price * cartItem.quantity;
       }
     });
     return total;
   }
 
-  void addItem(String productId, String name, double price, String imagePath) {
+  // Mengubah addItem agar menerima objek Product
+  void addItem(Product product) {
+    final productId = product.id.toString();
     if (_items.containsKey(productId)) {
-      _items[productId] = CartItem(
-        id: _items[productId]!.id,
-        name: _items[productId]!.name,
-        price: _items[productId]!.price,
-        quantity: _items[productId]!.quantity + 1,
-        imagePath: _items[productId]!.imagePath,
-        isSelected: _items[productId]!.isSelected,
+      // Jika sudah ada, tambah jumlahnya
+      _items.update(
+        productId,
+        (existingCartItem) => CartItem(
+          id: existingCartItem.id,
+          name: existingCartItem.name,
+          imageUrl: existingCartItem.imageUrl,
+          price: existingCartItem.price,
+          quantity: existingCartItem.quantity + 1,
+          isSelected: existingCartItem.isSelected,
+        ),
       );
     } else {
-      _items[productId] = CartItem(
-        id: productId,
-        name: name,
-        price: price,
-        quantity: 1,
-        imagePath: imagePath,
+      // Jika belum ada, buat CartItem baru dari Product
+      _items.putIfAbsent(
+        productId,
+        () => CartItem.fromProduct(product),
       );
     }
     notifyListeners();
@@ -45,22 +51,25 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void updateQuantity(String productId, int quantity) {
-    if (_items.containsKey(productId)) {
-      if (quantity > 0) {
-        _items[productId] = CartItem(
-          id: _items[productId]!.id,
-          name: _items[productId]!.name,
-          price: _items[productId]!.price,
-          quantity: quantity,
-          imagePath: _items[productId]!.imagePath,
-          isSelected: _items[productId]!.isSelected,
-        );
-      } else {
-        removeItem(productId);
-      }
-      notifyListeners();
+  void updateQuantity(String productId, int newQuantity) {
+    if (!_items.containsKey(productId)) return;
+    if (newQuantity > 0) {
+      _items.update(
+        productId,
+        (existingItem) => CartItem(
+          id: existingItem.id,
+          name: existingItem.name,
+          imageUrl: existingItem.imageUrl,
+          price: existingItem.price,
+          quantity: newQuantity,
+          isSelected: existingItem.isSelected,
+        ),
+      );
+    } else {
+      // Jika kuantitas 0 atau kurang, hapus item
+      removeItem(productId);
     }
+    notifyListeners();
   }
 
   void toggleSelection(String productId) {
@@ -71,13 +80,7 @@ class CartProvider with ChangeNotifier {
   }
 
   void clear() {
-    _items = {};
+    _items.clear();
     notifyListeners();
-  }
-
-  void initializeDummyData() {
-    addItem('1', 'Roti Tawar', 10000.0, 'assets/roti1.jpg');
-    addItem('2', 'Roti Coklat', 12000.0, 'assets/roti2.jpg');
-    addItem('3', 'Roti Keju', 15000.0, 'assets/roti1.jpg');
   }
 }
