@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:toko_roti/view/admin/add_product.dart';
-import 'package:toko_roti/view/get-started.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:toko_roti/view/auth/login.dart'; // Sesuaikan dengan path Anda
 
-void main() {
+Future<void> main() async {
+  // Load file .env sebelum aplikasi berjalan
+  await dotenv.load(fileName: ".env");
+
   runApp(const MyApp());
 }
 
@@ -12,15 +15,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Toko Roti',
       debugShowCheckedModeBanner: false,
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const GetStarted(),
-        '/addproduct': (context) => const AddProductPage(),
-        // '/login': (context) => const Login(),
-        // '/register': (context) => const GetStarted(),
-      },
+      home: const Login(), // Halaman awal
     );
   }
 }
-    
