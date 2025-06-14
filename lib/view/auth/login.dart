@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+// import 'package:toko_roti/view/home_screen.dart'; // Uncomment jika sudah ada home screen
 import 'package:toko_roti/view/auth/register.dart';
+import '../../services/auth_service.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -9,57 +11,65 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
-  // Kunci untuk validasi form
   final _formKey = GlobalKey<FormState>();
-
-  // Controller untuk mengambil nilai dari text field
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final AuthService _authService = AuthService(); // Instance service
 
-  // State untuk mengatur visibilitas password
   bool _isPasswordVisible = false;
+  bool _isLoading = false; // State untuk loading indicator
 
   @override
   void dispose() {
-    // Selalu dispose controller setelah tidak digunakan untuk menghindari memory leak
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  void _login() {
-    // Cek apakah form valid
+  void _login() async {
     if (_formKey.currentState!.validate()) {
-      // Jika valid, ambil data
-      String email = _emailController.text;
-      String password = _passwordController.text;
+      setState(() {
+        _isLoading = true; // Mulai loading
+      });
 
-      // ---- LOGIKA LOGIN ----
-      // Di sinilah Anda akan memanggil API untuk login.
-      // Untuk sekarang, kita hanya akan print datanya.
-      print('Login berhasil!');
-      print('Email: $email');
-      print('Password: $password');
+      try {
+        final email = _emailController.text;
+        final password = _passwordController.text;
 
-      // Tampilkan snackbar atau navigasi ke halaman utama
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Memproses Login...')));
+        // Panggil service untuk login
+        final user = await _authService.login(email, password);
 
-      // Contoh navigasi ke halaman home (buat halaman HomeScreen terlebih dahulu)
-      // Navigator.pushReplacement(
-      //   context,
-      //   MaterialPageRoute(builder: (context) => const HomeScreen()),
-      // );
+        // Jika berhasil, tampilkan pesan dan navigasi ke halaman utama
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login berhasil! Halo, ${user.name}')),
+        );
+        
+        // Contoh navigasi ke halaman home setelah login berhasil
+        // Navigator.pushReplacement(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => const HomeScreen()),
+        // );
+
+      } catch (e) {
+        // Jika gagal, tampilkan pesan error dari backend
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}')),
+        );
+      } finally {
+        // Apapun hasilnya, hentikan loading
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Isi build method sama persis seperti yang Anda berikan,
+    // namun kita akan modifikasi sedikit pada bagian tombol.
     return Scaffold(
-      // Menggunakan SafeArea agar konten tidak tumpang tindih dengan status bar
       body: SafeArea(
-        // Menggunakan SingleChildScrollView agar bisa di-scroll saat keyboard muncul
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Form(
@@ -69,16 +79,12 @@ class _LoginState extends State<Login> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 80.0),
-
-                // --- Logo atau Ikon Aplikasi ---
                 const Icon(
                   Icons.bakery_dining_outlined,
                   size: 100,
-                  color: Color(0xFFD35400), // Warna oranye hangat
+                  color: Color(0xFFD35400),
                 ),
                 const SizedBox(height: 16.0),
-
-                // --- Judul dan Subjudul ---
                 const Text(
                   'Selamat Datang Kembali!',
                   textAlign: TextAlign.center,
@@ -123,15 +129,13 @@ class _LoginState extends State<Login> {
                 // --- Text Field untuk Password ---
                 TextFormField(
                   controller: _passwordController,
-                  obscureText:
-                      !_isPasswordVisible, // Sembunyikan/tampilkan password
+                  obscureText: !_isPasswordVisible,
                   decoration: InputDecoration(
                     labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock_outline),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12.0),
                     ),
-                    // Ikon untuk toggle visibilitas password
                     suffixIcon: IconButton(
                       icon: Icon(
                         _isPasswordVisible
@@ -139,7 +143,6 @@ class _LoginState extends State<Login> {
                             : Icons.visibility,
                       ),
                       onPressed: () {
-                        // Update state untuk redraw UI
                         setState(() {
                           _isPasswordVisible = !_isPasswordVisible;
                         });
@@ -156,41 +159,35 @@ class _LoginState extends State<Login> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 8.0),
-
-                // --- Tombol Lupa Password ---
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      // TODO: Navigasi ke halaman lupa password
-                    },
-                    child: const Text(
-                      'Lupa Password?',
-                      style: TextStyle(color: Color(0xFFD35400)),
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 24.0),
 
-                // --- Tombol Login ---
+                // --- Tombol Login dengan Loading Indicator ---
                 ElevatedButton(
-                  onPressed: _login, // Panggil fungsi login saat ditekan
+                  onPressed: _isLoading ? null : _login, // Nonaktifkan tombol saat loading
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD35400), // Warna utama
+                    backgroundColor: const Color(0xFFD35400),
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.0),
                     ),
                   ),
-                  child: const Text(
-                    'Masuk',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 3,
+                          ),
+                        )
+                      : const Text(
+                          'Masuk',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 24.0),
 

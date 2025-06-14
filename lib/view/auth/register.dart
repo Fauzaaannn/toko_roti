@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/auth_service.dart'; // Import service
 
 class Register extends StatefulWidget {
   const Register({super.key});
@@ -11,50 +12,68 @@ class _RegisterState extends State<Register> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
+
+  // Instance service
+  final AuthService _authService = AuthService();
 
   bool _isPasswordVisible = false;
+  bool _isLoading = false; // State untuk loading
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _phoneController.dispose();
     _passwordController.dispose();
-    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _register() {
-    // Cek validasi form
+  void _register() async {
+    // Ubah menjadi async
     if (_formKey.currentState!.validate()) {
-      // Jika semua data valid, proses pendaftaran
-      String name = _nameController.text;
-      String email = _emailController.text;
-      String password = _passwordController.text;
-
-      // ---- LOGIKA REGISTER ----
-      // Di sini Anda akan memanggil API untuk mendaftarkan user baru.
-      // Untuk saat ini, kita hanya akan print datanya.
-      print('Proses Pendaftaran Berhasil!');
-      print('Nama: $name');
-      print('Email: $email');
-      print('Password: $password');
-
-      // Tampilkan notifikasi sukses dan kembali ke halaman login
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pendaftaran berhasil! Silakan masuk.'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      // Kembali ke halaman login setelah beberapa saat
-      Future.delayed(const Duration(seconds: 2), () {
-        Navigator.pop(context);
+      setState(() {
+        _isLoading = true; // Mulai loading
       });
+
+      try {
+        await _authService.register(
+          _nameController.text,
+          _emailController.text,
+          _passwordController.text,
+        );
+
+        // Jika berhasil, tampilkan notifikasi dan kembali ke halaman login
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pendaftaran berhasil! Silakan masuk.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Kembali ke halaman login setelah beberapa saat
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        });
+      } catch (e) {
+        // Tangkap dan tampilkan error dari backend
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error: ${e.toString().replaceAll('Exception: ', '')}',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } finally {
+        // Apapun hasilnya, hentikan loading
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
     }
   }
 
@@ -71,8 +90,6 @@ class _RegisterState extends State<Register> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 50.0),
-
-                // --- Logo dan Judul ---
                 const Icon(
                   Icons.bakery_dining_outlined,
                   size: 80,
@@ -90,13 +107,13 @@ class _RegisterState extends State<Register> {
                 ),
                 const SizedBox(height: 8.0),
                 Text(
-                  'Isi data di bawah untuk memulai petualangan rasa.',
+                  'Isi data di bawah untuk memulai.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 32.0),
 
-                // --- Text Field untuk Nama Lengkap ---
+                // --- Field Nama ---
                 TextFormField(
                   controller: _nameController,
                   decoration: InputDecoration(
@@ -106,15 +123,15 @@ class _RegisterState extends State<Register> {
                       borderRadius: BorderRadius.circular(12.0),
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty)
-                      return 'Nama tidak boleh kosong';
-                    return null;
-                  },
+                  validator:
+                      (value) =>
+                          value == null || value.isEmpty
+                              ? 'Nama tidak boleh kosong'
+                              : null,
                 ),
                 const SizedBox(height: 16.0),
 
-                // --- Text Field untuk Email ---
+                // --- Field Email ---
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -135,7 +152,7 @@ class _RegisterState extends State<Register> {
                 ),
                 const SizedBox(height: 16.0),
 
-                // --- Text Field untuk Password ---
+                // --- Field Password ---
                 TextFormField(
                   controller: _passwordController,
                   obscureText: !_isPasswordVisible,
@@ -164,11 +181,11 @@ class _RegisterState extends State<Register> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16.0),
+                const SizedBox(height: 24.0),
 
-                // --- Tombol Daftar ---
+                // --- Tombol Daftar dengan Loading ---
                 ElevatedButton(
-                  onPressed: _register,
+                  onPressed: _isLoading ? null : _register,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFD35400),
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -176,18 +193,28 @@ class _RegisterState extends State<Register> {
                       borderRadius: BorderRadius.circular(12.0),
                     ),
                   ),
-                  child: const Text(
-                    'Daftar',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child:
+                      _isLoading
+                          ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 3,
+                            ),
+                          )
+                          : const Text(
+                            'Daftar',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                 ),
                 const SizedBox(height: 16.0),
 
-                // --- Tautan untuk Kembali ke Login ---
+                // --- Tautan Kembali ke Login ---
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -196,10 +223,7 @@ class _RegisterState extends State<Register> {
                       style: TextStyle(color: Colors.grey[600]),
                     ),
                     TextButton(
-                      onPressed:
-                          () => Navigator.pop(
-                            context,
-                          ), // Kembali ke halaman sebelumnya (login)
+                      onPressed: () => Navigator.pop(context),
                       child: const Text(
                         'Masuk di sini',
                         style: TextStyle(
