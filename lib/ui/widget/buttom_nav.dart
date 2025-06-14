@@ -58,7 +58,7 @@ class _ButtomNavState extends State<ButtomNav> {
       ];
     } else {
       // Default untuk 'customer'
-      _pages = const [ListProductPage(), KeranjangPage(), PembayaranPage()];
+      _pages = [ListProduct(), const KeranjangPage(), const PembayaranPage()];
       _navItems = const [
         CurvedNavigationBarItem(
           child: Icon(Icons.store, color: Colors.white),
