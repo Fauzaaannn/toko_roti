@@ -1,7 +1,7 @@
-// lib/admin_transaction_history_screen.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Package untuk format tanggal dan angka
-import 'package:toko_roti/model/order_model.dart'; // Impor model Order
+import 'package:intl/intl.dart';
+import '../../model/order_model.dart'; // Impor model yang baru
+import '../../services/admin_service.dart'; // Impor service admin
 
 class AdminTransactionHistoryScreen extends StatefulWidget {
   const AdminTransactionHistoryScreen({super.key});
@@ -13,164 +13,195 @@ class AdminTransactionHistoryScreen extends StatefulWidget {
 
 class _AdminTransactionHistoryScreenState
     extends State<AdminTransactionHistoryScreen> {
-      
-  // --- DATA DUMMY ---
-  final List<Order> _dummyOrders = [
-    Order(
-      id: 'TRX-20250615-001',
-      customerName: 'Citra Lestari',
-      orderDate: DateTime(2025, 6, 15, 10, 30),
-      status: 'Selesai',
-      totalPrice: 55000,
-      itemSummary: '2x Roti Cokelat, 1x Kue Keju',
-    ),
-    Order(
-      id: 'TRX-20250615-002',
-      customerName: 'Ahmad Dahlan',
-      orderDate: DateTime(2025, 6, 15, 9, 5),
-      status: 'Diproses',
-      totalPrice: 32000,
-      itemSummary: '1x Roti Tawar, 1x Donat Gula',
-    ),
-    Order(
-      id: 'TRX-20250614-001',
-      customerName: 'Dewi Anggraini',
-      orderDate: DateTime(2025, 6, 14, 18, 20),
-      status: 'Selesai',
-      totalPrice: 78000,
-      itemSummary: '3x Croissant, 2x Kopi Susu',
-    ),
-    Order(
-      id: 'TRX-20250614-002',
-      customerName: 'Budi Santoso',
-      orderDate: DateTime(2025, 6, 14, 15, 45),
-      status: 'Menunggu Konfirmasi',
-      totalPrice: 25000,
-      itemSummary: '1x Roti Sosis',
-    ),
-  ];
-  // --- AKHIR DATA DUMMY ---
+  final AdminService _adminService = AdminService();
+  late Future<List<Order>> _futureOrders;
+
+  @override
+  void initState() {
+    super.initState();
+    // Panggil API saat halaman pertama kali dibuka
+    _futureOrders = _adminService.getAllTransactions();
+  }
 
   // Helper widget untuk membuat "chip" status yang berwarna
+  // Disesuaikan dengan status dari backend
   Widget _buildStatusChip(String status) {
     Color chipColor;
+    String statusText;
     IconData chipIcon;
 
-    switch (status) {
-      case 'Selesai':
+    switch (status.toLowerCase()) {
+      case 'paid':
         chipColor = Colors.green;
+        statusText = 'Dibayar';
         chipIcon = Icons.check_circle;
         break;
-      case 'Diproses':
-        chipColor = Colors.blue;
-        chipIcon = Icons.sync;
-        break;
-      case 'Menunggu Konfirmasi':
+      case 'unpaid':
         chipColor = Colors.orange;
+        statusText = 'Belum Dibayar';
         chipIcon = Icons.hourglass_top;
+        break;
+      case 'delivered':
+        chipColor = Colors.blue;
+        statusText = 'Terkirim';
+        chipIcon = Icons.local_shipping;
+        break;
+      case 'failed':
+      case 'expired':
+        chipColor = Colors.red;
+        statusText = 'Gagal';
+        chipIcon = Icons.cancel;
         break;
       default:
         chipColor = Colors.grey;
+        statusText = 'Tidak Diketahui';
         chipIcon = Icons.help;
     }
 
     return Chip(
       avatar: Icon(chipIcon, color: Colors.white, size: 16),
-      label: Text(status),
+      label: Text(statusText),
       backgroundColor: chipColor,
-      labelStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      labelStyle: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Formatter untuk mata uang Rupiah
-    final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+    final currencyFormatter = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    );
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Admin: Riwayat Transaksi'),
         backgroundColor: const Color(0xFFD35400),
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              // Fungsi refresh untuk memuat ulang data
+              setState(() {
+                _futureOrders = _adminService.getAllTransactions();
+              });
+            },
+          ),
+        ],
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(8.0),
-        itemCount: _dummyOrders.length,
-        itemBuilder: (context, index) {
-          final order = _dummyOrders[index];
-          
-          return Card(
-            elevation: 2,
-            margin: const EdgeInsets.symmetric(vertical: 6.0),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: InkWell( // Membuat card bisa di-tap
-              borderRadius: BorderRadius.circular(12),
-              onTap: () {
-                // Aksi saat card di-tap (misal: lihat detail transaksi)
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Melihat detail untuk ${order.id}')),
-                );
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Baris atas: ID Pesanan dan Status
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: FutureBuilder<List<Order>>(
+        future: _futureOrders,
+        builder: (context, snapshot) {
+          // Saat data masih loading
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          // Jika terjadi error
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Error: ${snapshot.error.toString().replaceAll('Exception: ', '')}',
+              ),
+            );
+          }
+          // Jika data berhasil didapat tapi kosong
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('Tidak ada data transaksi.'));
+          }
+
+          // Jika data berhasil didapat
+          final orders = snapshot.data!;
+          return ListView.builder(
+            padding: const EdgeInsets.all(8.0),
+            itemCount: orders.length,
+            itemBuilder: (context, index) {
+              final order = orders[index];
+              return Card(
+                elevation: 2,
+                margin: const EdgeInsets.symmetric(vertical: 6.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Melihat detail untuk Order ID: ${order.id}',
+                        ),
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'ORDER ID: #${order.id}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[700],
+                                fontSize: 14,
+                              ),
+                            ),
+                            _buildStatusChip(order.status),
+                          ],
+                        ),
+                        const Divider(height: 20),
                         Text(
-                          order.id,
-                          style: TextStyle(
+                          order.customerName,
+                          style: const TextStyle(
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.grey[700],
-                            fontSize: 14,
                           ),
                         ),
-                        _buildStatusChip(order.status),
+                        const SizedBox(height: 4),
+                        Text(
+                          DateFormat(
+                            'd MMMM yyyy, HH:mm',
+                            'id_ID',
+                          ).format(order.createdAt),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          order.itemSummary,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            currencyFormatter.format(
+                              double.parse(order.totalAmount),
+                            ),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFD35400),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
-                    const Divider(height: 20),
-                    // Detail Pelanggan dan Tanggal
-                    Text(
-                      order.customerName,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      DateFormat('d MMMM yyyy, HH:mm', 'id_ID').format(order.orderDate),
-                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                    ),
-                    const SizedBox(height: 12),
-                    // Ringkasan Item
-                    Text(
-                      order.itemSummary,
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                    const SizedBox(height: 12),
-                    // Total Harga
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        currencyFormatter.format(order.totalPrice),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFD35400),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           );
         },
       ),
